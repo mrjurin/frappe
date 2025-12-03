@@ -8,7 +8,9 @@ frappe.ui.form.on("DocType", {
 		}
 		frm.call("check_pending_migration");
 	},
-
+	is_submittable: (frm) => {
+		frm.cscript.toggle_set_name_after_submit(frm);
+	},
 	before_save: function (frm) {
 		let form_builder = frappe.form_builder;
 		if (form_builder?.store) {
@@ -102,7 +104,6 @@ frappe.ui.form.on("DocType", {
 
 		render_form_builder(frm);
 	},
-
 	istable: (frm) => {
 		if (frm.doc.istable && frm.is_new()) {
 			frm.set_value("default_view", null);

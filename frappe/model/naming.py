@@ -124,7 +124,7 @@ class NamingSeries:
 		return cint(frappe.db.get_value("Series", prefix, "current", order_by="name"))
 
 
-def set_new_name(doc):
+def set_new_name(doc, set_draft_name=False):
 	"""
 	Sets the `name` property for the document based on various rules.
 
@@ -137,6 +137,10 @@ def set_new_name(doc):
 	"""
 
 	doc.run_method("before_naming")
+
+	if set_draft_name:
+		doc.name = "({0})".format(make_autoname('hash', doc.doctype))
+		return
 
 	meta = frappe.get_meta(doc.doctype)
 	autoname = meta.autoname or ""

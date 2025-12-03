@@ -178,17 +178,9 @@ def rename_doc(
 		update_assignments(old, new, doctype)
 
 	# update link fields' values
-	link_fields = get_link_fields(doctype)
-	update_link_field_values(link_fields, old, new, doctype)
+	update_links(doctype, old, new)
 
-	rename_dynamic_links(doctype, old, new)
-
-	# save the user settings in the db
-	update_user_settings(old, new, link_fields)
-
-	if doctype == "DocType":
-		rename_doctype(doctype, old, new)
-		update_customizations(old, new)
+	update_user_permissions(doctype, old, new)
 
 	update_attachments(doctype, old, new)
 
@@ -230,6 +222,27 @@ def rename_doc(
 
 	return new
 
+def update_links(doctype, old, new):
+	link_fields = get_link_fields(doctype)
+	update_link_field_values(link_fields, old, new, doctype)
+
+	rename_dynamic_links(doctype, old, new)
+
+	# save the user settings in the db
+	update_user_settings(old, new, link_fields)
+
+	if doctype == "DocType":
+		rename_doctype(doctype, old, new)
+		update_customizations(old, new)
+		
+	update_linked_comments(doctype, old, new)
+
+def update_user_permissions(doctype, old, new):
+	frappe.db.sql("""UPDATE `tabDefaultValue` SET `defvalue`=%s WHERE `parenttype`='User Permission'
+		AND `defkey`=%s AND `defvalue`=%s""", (new, doctype, old))
+
+def update_linked_comments(doctype, old, new):
+	frappe.db.set_value("Comment", {"reference_doctype": doctype, "reference_name": old}, 'reference_name', new)
 
 def update_assignments(old: str, new: str, doctype: str) -> None:
 	old_assignments = frappe.parse_json(frappe.db.get_value(doctype, old, "_assign")) or []

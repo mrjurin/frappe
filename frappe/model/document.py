@@ -25,6 +25,7 @@ from frappe.utils import compare, cstr, date_diff, file_lock, flt, get_datetime_
 from frappe.utils.data import get_absolute_url, get_datetime, get_timedelta, getdate
 from frappe.utils.global_search import update_global_search
 
+
 if TYPE_CHECKING:
 	from frappe.core.doctype.docfield.docfield import DocField
 
@@ -283,7 +284,9 @@ class Document(BaseDocument):
 		self._validate_links()
 		self.check_permission("create")
 		self.run_method("before_insert")
-		self.set_new_name(set_name=set_name, set_child_names=set_child_names)
+		self.set_new_name(set_name=set_name, \
+			set_child_names=set_child_names, \
+				set_draft_name=getattr(self.meta, "set_name_after_submit", False))
 		self.set_parent_in_children()
 		self.validate_higher_perm_levels()
 
@@ -387,6 +390,18 @@ class Document(BaseDocument):
 			self.db_update()
 
 		self.update_children()
+
+		if self._action == "submit" and getattr(self.meta, "set_name_after_submit", False):
+			draft_name = self.name
+			self.set_new_name()
+
+			from frappe.model.rename_doc import rename_doc
+			rename_doc(self.doctype, draft_name, \
+				self.name, \
+				ignore_permissions=True, \
+				force=True, \
+				show_alert=False)
+
 		self.run_post_save_methods()
 
 		# clear unsaved flag
@@ -476,10 +491,12 @@ class Document(BaseDocument):
 
 		return previous_value != current_value
 
-	def set_new_name(self, force=False, set_name=None, set_child_names=True):
+	def set_new_name(self, force=False, set_name=None, set_child_names=True, set_draft_name=False):
 		"""Calls `frappe.naming.set_new_name` for parent and child docs."""
 
-		if self.flags.name_set and not force:
+		if set_draft_name and self.flags.draft_name_set and not force:
+			return
+		elif not set_draft_name and self.flags.name_set and not force:
 			return
 
 		autoname = self.meta.autoname or ""
@@ -493,14 +510,17 @@ class Document(BaseDocument):
 		if set_name:
 			self.name = validate_name(self.doctype, set_name)
 		else:
-			set_new_name(self)
+			set_new_name(self, set_draft_name=set_draft_name)
 
 		if set_child_names:
 			# set name for children
 			for d in self.get_all_children():
 				set_new_name(d)
 
-		self.flags.name_set = True
+		if set_draft_name:
+			self.flags.draft_name_set = True
+		else:
+			self.flags.name_set = True
 
 	def get_title(self):
 		"""Get the document title based on title_field or `title` or `name`"""

@@ -87,6 +87,8 @@ frappe.model.DocTypeController = class DocTypeController extends frappe.ui.form.
 			setTimeout(() => (this.frm.__from_naming_rule = false), 500);
 
 			this.set_naming_rule_description();
+
+			this.toggle_set_name_after_submit();
 		}
 	}
 
@@ -110,6 +112,17 @@ frappe.model.DocTypeController = class DocTypeController extends frappe.ui.form.
 			this.frm
 				.get_field("autoname")
 				.set_description(naming_rule_description[this.frm.doc.naming_rule]);
+		}
+
+		this.toggle_set_name_after_submit();
+	}
+
+	toggle_set_name_after_submit() {
+		if (!this.frm.doc.autoname || ['autoincrement', 'hash'].indexOf(this.frm.doc.autoname) !== -1 || !this.frm.doc.is_submittable) {
+			this.frm.set_value('set_name_after_submit', 0);
+			this.frm.toggle_display('set_name_after_submit', 0);
+		} else {
+			this.frm.toggle_display('set_name_after_submit', 1);
 		}
 	}
 
