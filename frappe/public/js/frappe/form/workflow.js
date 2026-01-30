@@ -112,6 +112,9 @@ frappe.ui.form.States = class FormStates {
 									action: d.action,
 								})
 								.then((doc) => {
+									if (doc && doc.name && doc.name !== me.frm.docname) {
+										doc.localname = me.frm.docname;
+									}
 									frappe.model.sync(doc);
 									me.frm.refresh();
 									me.frm.selected_workflow_action = null;
