@@ -392,15 +392,18 @@ class Document(BaseDocument):
 		self.update_children()
 
 		if self._action == "submit" and getattr(self.meta, "set_name_after_submit", False):
-			draft_name = self.name
-			self.set_new_name()
+			# Only rename if current name is a draft name (starts with parentheses)
+			# Documents created before enabling set_name_after_submit already have proper names
+			if self.name and self.name.startswith("(") and self.name.endswith(")"):
+				draft_name = self.name
+				self.set_new_name()
 
-			from frappe.model.rename_doc import rename_doc
-			rename_doc(self.doctype, draft_name, \
-				self.name, \
-				ignore_permissions=True, \
-				force=True, \
-				show_alert=False)
+				from frappe.model.rename_doc import rename_doc
+				rename_doc(self.doctype, draft_name, \
+					self.name, \
+					ignore_permissions=True, \
+					force=True, \
+					show_alert=False)
 
 		self.run_post_save_methods()
 
