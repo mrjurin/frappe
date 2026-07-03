@@ -532,7 +532,13 @@ frappe.views.QueryReport = class QueryReport extends frappe.views.BaseList {
 
 		this.filters = filters
 			.map((df) => {
-				if (df.fieldtype === "Break") return;
+				if (df.fieldtype === "Break") {
+					filter_area.append(
+						'<div class="col-xs-12" style="margin: 8px 0 4px; border-top: 1px solid var(--border-color, #d1d8dd);"></div>'
+					);
+					this.page.add_break();
+					return;
+				}
 
 				let f = this.page.add_field(df, filter_area);
 
