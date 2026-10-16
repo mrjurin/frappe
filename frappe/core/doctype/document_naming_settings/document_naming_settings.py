@@ -165,9 +165,12 @@ class DocumentNamingSettings(Document):
 		dt = frappe.get_doc("DocType", self.transaction_type)
 
 		options = self.get_options_list(self.naming_series_options)
+		# ponytail: site_config flag, not a UI checkbox - overlapping prefixes share one
+		# `tabSeries` counter, so each doctype's own sequence gets gaps. Admin-only decision.
+		allow_overlap = frappe.conf.get("allow_duplicate_naming_series")
 		for series in options:
-			if stripped_series(series) in existing_series:
-				frappe.throw(_("Series {0} already used in {1}").format(series, existing_series[series]))
+			if not allow_overlap and stripped_series(series) in existing_series:
+				frappe.throw(_("Series {0} already used in {1}").format(series, existing_series[stripped_series(series)]))
 			validate_series(dt, series)
 
 	def validate_series_name(self, series):
