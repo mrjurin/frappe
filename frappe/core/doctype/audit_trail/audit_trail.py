@@ -31,6 +31,14 @@ class AuditTrail(Document):
 		if not self.doctype_name:
 			frappe.throw(_("{} field cannot be empty.").format(frappe.bold("Doctype")))
 
+		# ponytail: amended_from only exists on submittable doctypes
+		if not frappe.get_meta(self.doctype_name).is_submittable:
+			frappe.throw(
+				_("{} is not a submittable DocType, so it has no amendment trail.").format(
+					frappe.bold(self.doctype_name)
+				)
+			)
+
 	def validate_document(self):
 		if not self.document:
 			frappe.throw(_("{} field cannot be empty.").format(frappe.bold("Document")))
